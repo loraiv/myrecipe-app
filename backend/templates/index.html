@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <title>Всички рецепти</title>
+</head>
+<body>
+    <h1>Всички рецепти</h1>
+
+    <a href="{{ url_for('add_recipe') }}">
+        <button>Добави нова рецепта</button>
+    </a>
+
+    <ul>
+        {% for recipe in recipes %}
+            <li>
+                <strong>{{ recipe.title }}</strong>: {{ recipe.description }}
+                <a href="{{ url_for('edit_recipe', recipe_id=recipe.id) }}"><button>Редактирай</button></a>
+                <a href="{{ url_for('delete_recipe', recipe_id=recipe.id) }}"><button>Изтрий</button></a>
+            </li>
+        {% else %}
+            <li>Все още няма добавени рецепти.</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

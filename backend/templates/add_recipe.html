@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8" />
+    <title>Добави рецепта</title>
+</head>
+<body>
+    <h1>Добави нова рецепта</h1>
+    <form method="POST">
+        <label for="title">Заглавие:</label><br />
+        <input type="text" id="title" name="title" required /><br /><br />
+        
+        <label for="description">Описание:</label><br />
+        <textarea id="description" name="description" rows="5" required></textarea><br /><br />
+        
+        <button type="submit">Запази</button>
+    </form>
+    <br />
+    <a href="{{ url_for('index') }}">Назад към списъка</a>
+</body>
+</html>

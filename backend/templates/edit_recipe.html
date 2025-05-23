@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <title>Редактирай рецепта</title>
+</head>
+<body>
+    <h1>Редактирай рецепта</h1>
+    <form method="POST">
+        <input type="text" name="title" value="{{ recipe.title }}" required><br>
+        <textarea name="description" required>{{ recipe.description }}</textarea><br>
+        <button type="submit">Запази</button>
+    </form>
+    <a href="{{ url_for('index') }}">Назад</a>
+</body>
+</html>
