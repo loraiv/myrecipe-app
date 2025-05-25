@@ -1,0 +1,107 @@
+import React, { useEffect, useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
+import Login from './components/Auth/Login';
+import Register from './components/Auth/Register';
+import RecipeList from './components/Recipes/RecipeList';
+import RecipeForm from './components/Recipes/RecipeForm';
+import './App.css';
+
+const App: React.FC = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('user'));
+
+  useEffect(() => {
+    // Update authentication state when localStorage changes
+    const handleStorageChange = () => {
+      setIsAuthenticated(!!localStorage.getItem('user'));
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    setIsAuthenticated(false);
+    window.location.href = '/login';
+  };
+
+  return (
+    <Router>
+      <div className="app">
+        <nav className="navbar">
+          <div className="nav-brand">Recipe App</div>
+          <div className="nav-links">
+            {isAuthenticated ? (
+              <>
+                <Link to="/recipes">Recipes</Link>
+                <button onClick={handleLogout} className="logout-btn">
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/login">Login</Link>
+                <Link to="/register">Register</Link>
+              </>
+            )}
+          </div>
+        </nav>
+
+        <main className="main-content">
+          <Routes>
+            <Route
+              path="/"
+              element={
+                isAuthenticated ? (
+                  <Navigate to="/recipes" replace />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+            <Route 
+              path="/login" 
+              element={
+                isAuthenticated ? (
+                  <Navigate to="/recipes" replace />
+                ) : (
+                  <Login />
+                )
+              } 
+            />
+            <Route 
+              path="/register" 
+              element={
+                isAuthenticated ? (
+                  <Navigate to="/recipes" replace />
+                ) : (
+                  <Register />
+                )
+              } 
+            />
+            <Route
+              path="/recipes"
+              element={
+                isAuthenticated ? <RecipeList /> : <Navigate to="/login" replace />
+              }
+            />
+            <Route
+              path="/recipes/new"
+              element={
+                isAuthenticated ? <RecipeForm /> : <Navigate to="/login" replace />
+              }
+            />
+            <Route
+              path="/recipes/:id"
+              element={
+                isAuthenticated ? <RecipeForm /> : <Navigate to="/login" replace />
+              }
+            />
+          </Routes>
+        </main>
+      </div>
+    </Router>
+  );
+};
+
+export default App;

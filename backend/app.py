@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 import os
+from app.models import User
+
 
 app = Flask(__name__)
 
@@ -75,6 +77,14 @@ def signup():
         if User.query.filter_by(username=username).first():
             flash('Потребителското име вече съществува.')
             return redirect(url_for('signup'))
+        if len(password) < 6:
+            flash('Паролата трябва да е поне 6 символа.')
+            return redirect(url_for('signup'))
+
+        if '@' not in email:
+            flash('Моля въведете валиден имейл адрес.')
+            return redirect(url_for('signup'))
+
         
         new_user = User(username=username, email=email)
         new_user.set_password(password)
@@ -109,6 +119,10 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for('index'))
+
+from app import create_app, db
+
+app = create_app()
 
 
 if __name__ == "__main__":
