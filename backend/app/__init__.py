@@ -2,6 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_cors import CORS
+import os
 
 db = SQLAlchemy()
 login_manager = LoginManager()
@@ -23,13 +24,16 @@ def create_app():
     app.register_blueprint(auth_blueprint)
     app.register_blueprint(recipes_blueprint)
     
-    from .models import User
+    with app.app_context():
+        # Import models here to avoid circular imports
+        from .models import User, Recipe
+        # Create all database tables
+        db.drop_all()  # Drop existing tables
+        db.create_all()  # Create new tables
     
     @login_manager.user_loader
     def load_user(user_id):
+        from .models import User
         return User.query.get(int(user_id))
-    
-    with app.app_context():
-        db.create_all()
     
     return app

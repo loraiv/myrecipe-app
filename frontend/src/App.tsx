@@ -4,6 +4,7 @@ import Login from './components/Auth/Login';
 import Register from './components/Auth/Register';
 import RecipeList from './components/Recipes/RecipeList';
 import RecipeForm from './components/Recipes/RecipeForm';
+import Profile from './components/Profile/Profile';
 import './App.css';
 
 const App: React.FC = () => {
@@ -34,6 +35,8 @@ const App: React.FC = () => {
             {isAuthenticated ? (
               <>
                 <Link to="/recipes">Recipes</Link>
+                <Link to="/recipes/new">Create Recipe</Link>
+                <Link to="/profile">My Profile</Link>
                 <button onClick={handleLogout} className="logout-btn">
                   Logout
                 </button>
@@ -95,6 +98,18 @@ const App: React.FC = () => {
               path="/recipes/:id"
               element={
                 isAuthenticated ? <RecipeForm /> : <Navigate to="/login" replace />
+              }
+            />
+            <Route
+              path="/recipes/:id/edit"
+              element={
+                isAuthenticated ? <RecipeForm /> : <Navigate to="/login" replace />
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                isAuthenticated ? <Profile /> : <Navigate to="/login" replace />
               }
             />
           </Routes>
