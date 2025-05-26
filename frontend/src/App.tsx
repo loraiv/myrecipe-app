@@ -16,8 +16,19 @@ const App: React.FC = () => {
       setIsAuthenticated(!!localStorage.getItem('user'));
     };
 
+    // Add event listener for storage changes
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+
+    // Add event listener for custom auth event
+    window.addEventListener('auth-change', handleStorageChange);
+
+    // Check auth state on mount
+    handleStorageChange();
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('auth-change', handleStorageChange);
+    };
   }, []);
 
   const handleLogout = () => {
@@ -68,7 +79,7 @@ const App: React.FC = () => {
                 isAuthenticated ? (
                   <Navigate to="/recipes" replace />
                 ) : (
-                  <Login />
+                  <Login setIsAuthenticated={setIsAuthenticated} />
                 )
               } 
             />

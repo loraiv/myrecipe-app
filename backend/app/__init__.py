@@ -1,39 +1,52 @@
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_cors import CORS
-import os
+from .database import init_db
 
-db = SQLAlchemy()
+app = Flask(__name__)
+app.config['SECRET_KEY'] = 'your-secret-key'
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_PATH'] = '/'
+app.config['SESSION_COOKIE_DOMAIN'] = None  # Allow all subdomains
+app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour
+app.config['SESSION_REFRESH_EACH_REQUEST'] = True
+
+# Configure CORS to allow credentials and specific origins
+CORS(app, supports_credentials=True, resources={
+    r"/*": {
+        "origins": [
+            "http://localhost:5173",
+            "http://localhost:5174",
+            "http://localhost:5175",
+            "http://localhost:5176",
+            "http://localhost:5177",
+            "http://localhost:5178"
+        ],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization", "Accept"],
+        "expose_headers": ["Content-Range", "X-Content-Range"],
+        "supports_credentials": True,
+        "max_age": 120
+    }
+})
+
 login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'auth.login'
+login_manager.session_protection = "strong"
 
-def create_app():
-    app = Flask(__name__)
-    CORS(app, supports_credentials=True)
-    
-    app.config['SECRET_KEY'] = 'your-secret-key'  # Change this in production
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///recipes.db'
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    
-    db.init_app(app)
-    login_manager.init_app(app)
-    
-    from .auth import auth as auth_blueprint
-    from .recipes import recipes as recipes_blueprint
-    
-    app.register_blueprint(auth_blueprint)
-    app.register_blueprint(recipes_blueprint)
-    
-    with app.app_context():
-        # Import models here to avoid circular imports
-        from .models import User, Recipe
-        # Create all database tables
-        db.drop_all()  # Drop existing tables
-        db.create_all()  # Create new tables
-    
-    @login_manager.user_loader
-    def load_user(user_id):
-        from .models import User
-        return User.query.get(int(user_id))
-    
-    return app
+# Initialize the database
+init_db()
+
+@login_manager.user_loader
+def load_user(user_id):
+    from .models import User
+    return User.get(int(user_id))
+
+from .auth import auth as auth_blueprint
+from .recipes import recipes as recipes_blueprint
+
+app.register_blueprint(auth_blueprint)
+app.register_blueprint(recipes_blueprint)

@@ -1,5 +1,4 @@
-from app import create_app, db
-from app.models import Category
+from app.database import get_db_connection
 
 def seed_categories():
     categories = [
@@ -15,17 +14,20 @@ def seed_categories():
         {'name': 'Snacks', 'description': 'Light bites and appetizers'}
     ]
 
-    app = create_app()
-    with app.app_context():
-        for category_data in categories:
-            # Check if category already exists
-            existing = Category.query.filter_by(name=category_data['name']).first()
-            if not existing:
-                category = Category(**category_data)
-                db.session.add(category)
-        
-        db.session.commit()
-        print("Categories seeded successfully!")
+    conn = get_db_connection()
+    for category in categories:
+        try:
+            conn.execute(
+                'INSERT INTO categories (name, description) VALUES (?, ?)',
+                (category['name'], category['description'])
+            )
+        except:
+            # Skip if category already exists
+            pass
+    
+    conn.commit()
+    conn.close()
+    print("Categories seeded successfully!")
 
 if __name__ == '__main__':
     seed_categories() 

@@ -1,37 +1,46 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_ENDPOINTS } from '../../config/api';
 
 const Register: React.FC = () => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+
     try {
-      const response = await fetch('http://localhost:5000/signup', {
+      const response = await fetch(API_ENDPOINTS.signup, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
         body: JSON.stringify({ username, email, password }),
+        credentials: 'include'
       });
 
-      if (response.ok) {
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
         navigate('/login');
       } else {
-        const data = await response.json();
-        alert(data.error);
+        setError(data.error || 'An error occurred during registration');
       }
     } catch (error) {
       console.error('Error:', error);
+      setError('An error occurred during registration');
     }
   };
 
   return (
     <div className="auth-container">
       <h2>Register</h2>
+      {error && <p className="error-message">{error}</p>}
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label>Username:</label>

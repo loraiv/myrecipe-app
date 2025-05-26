@@ -30,12 +30,13 @@ const RecipeForm: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const navigate = useNavigate();
   const { id } = useParams();
-  const isEditing = !!id;
+  const isEditing = !!id && window.location.pathname.includes('/edit');
+  const isViewing = !!id && !window.location.pathname.includes('/edit');
 
   useEffect(() => {
     console.log('Component mounted, fetching categories...');
     fetchCategories();
-    if (isEditing) {
+    if (id) {
       fetchRecipe();
     }
   }, [id]);
@@ -77,13 +78,18 @@ const RecipeForm: React.FC = () => {
         const data = await response.json();
         console.log('Fetched recipe data:', data);
         setFormData({
-          title: data.title,
-          description: data.description,
-          ingredients: data.ingredients,
-          instructions: data.instructions,
+          title: data.title || '',
+          description: data.description || '',
+          ingredients: data.ingredients || '',
+          instructions: data.instructions || '',
           category_ids: data.categories ? data.categories.map((c: Category) => c.id) : []
         });
         setIsOwner(user?.id === data.user_id);
+      } else if (response.status === 404) {
+        console.error('Recipe not found');
+        navigate('/recipes');
+      } else {
+        console.error('Error fetching recipe:', response.status);
       }
     } catch (error) {
       console.error('Error fetching recipe:', error);
@@ -157,8 +163,8 @@ const RecipeForm: React.FC = () => {
     return <div className="loading">Loading...</div>;
   }
 
-  // Show read-only view only if viewing (not editing) and not the owner
-  if (isEditing && !isOwner && !window.location.pathname.includes('/edit')) {
+  // Show read-only view for viewing mode
+  if (isViewing) {
     return (
       <div className="recipe-form">
         <h2>{formData.title}</h2>
@@ -185,22 +191,15 @@ const RecipeForm: React.FC = () => {
         </div>
         <div className="form-actions">
           <Link to="/recipes" className="back-btn">Back to Recipes</Link>
-          {isOwner && (
-            <Link to={`/recipes/${id}/edit`} className="edit-btn">Edit Recipe</Link>
-          )}
         </div>
       </div>
     );
   }
 
+  // Show editable form for create/edit mode
   return (
     <div className="recipe-form">
       <h2>{isEditing ? 'Edit Recipe' : 'Create Recipe'}</h2>
-      {/* Debug info */}
-      <div style={{ display: 'none' }}>
-        <p>Available Categories: {JSON.stringify(categories)}</p>
-        <p>Selected Category IDs: {JSON.stringify(formData.category_ids)}</p>
-      </div>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label htmlFor="title">Title:</label>
