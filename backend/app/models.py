@@ -2,41 +2,15 @@
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 from datetime import datetime
-from .database import get_db_connection
-import sqlite3
+from . import db
 
-class User(UserMixin):
-    def __init__(self, id, username, email, password_hash):
-        self.id = id
-        self.username = username
-        self.email = email
-        self.password_hash = password_hash
-
-    @staticmethod
-    def get(user_id):
-        try:
-            conn = get_db_connection()
-            user = conn.execute('SELECT * FROM users WHERE id = ?', (user_id,)).fetchone()
-            if user is None:
-                return None
-            return User(user['id'], user['username'], user['email'], user['password_hash'])
-        except sqlite3.OperationalError:
-            return None
-        finally:
-            conn.close()
-
-    @staticmethod
-    def get_by_username(username):
-        try:
-            conn = get_db_connection()
-            user = conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
-            if user is None:
-                return None
-            return User(user['id'], user['username'], user['email'], user['password_hash'])
-        except sqlite3.OperationalError:
-            return None
-        finally:
-            conn.close()
+class User(db.Model, UserMixin):
+    __tablename__ = 'users'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(128))
+    recipes = db.relationship('Recipe', backref='author', lazy=True)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -44,86 +18,30 @@ class User(UserMixin):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
-class Recipe:
-    def __init__(self, id, title, description, ingredients, instructions, created_at, updated_at, user_id, categories=None):
-        self.id = id
-        self.title = title
-        self.description = description
-        self.ingredients = ingredients
-        self.instructions = instructions
-        self.created_at = created_at
-        self.updated_at = updated_at
-        self.user_id = user_id
-        self.categories = categories if categories else []
+    @classmethod
+    def get_by_username(cls, username):
+        return cls.query.filter_by(username=username).first()
 
-    @staticmethod
-    def get_all():
-        conn = get_db_connection()
-        recipes = conn.execute('SELECT * FROM recipes').fetchall()
-        result = []
-        for recipe in recipes:
-            categories = get_recipe_categories(recipe['id'])
-            result.append(Recipe(
-                recipe['id'], recipe['title'], recipe['description'],
-                recipe['ingredients'], recipe['instructions'],
-                recipe['created_at'], recipe['updated_at'],
-                recipe['user_id'], categories
-            ))
-        conn.close()
-        return result
+recipe_categories = db.Table('recipe_categories',
+    db.Column('recipe_id', db.Integer, db.ForeignKey('recipes.id'), primary_key=True),
+    db.Column('category_id', db.Integer, db.ForeignKey('categories.id'), primary_key=True)
+)
 
-    @staticmethod
-    def get_by_user_id(user_id):
-        conn = get_db_connection()
-        recipes = conn.execute('SELECT * FROM recipes WHERE user_id = ?', (user_id,)).fetchall()
-        result = []
-        for recipe in recipes:
-            categories = get_recipe_categories(recipe['id'])
-            result.append(Recipe(
-                recipe['id'], recipe['title'], recipe['description'],
-                recipe['ingredients'], recipe['instructions'],
-                recipe['created_at'], recipe['updated_at'],
-                recipe['user_id'], categories
-            ))
-        conn.close()
-        return result
+class Recipe(db.Model):
+    __tablename__ = 'recipes'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    ingredients = db.Column(db.Text, nullable=False)
+    instructions = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    categories = db.relationship('Category', secondary=recipe_categories, lazy='subquery',
+        backref=db.backref('recipes', lazy=True))
 
-    @staticmethod
-    def get(recipe_id):
-        conn = get_db_connection()
-        recipe = conn.execute('SELECT * FROM recipes WHERE id = ?', (recipe_id,)).fetchone()
-        if recipe is None:
-            conn.close()
-            return None
-        categories = get_recipe_categories(recipe['id'])
-        conn.close()
-        return Recipe(
-            recipe['id'], recipe['title'], recipe['description'],
-            recipe['ingredients'], recipe['instructions'],
-            recipe['created_at'], recipe['updated_at'],
-            recipe['user_id'], categories
-        )
-
-class Category:
-    def __init__(self, id, name, description=None):
-        self.id = id
-        self.name = name
-        self.description = description
-
-    @staticmethod
-    def get_all():
-        conn = get_db_connection()
-        categories = conn.execute('SELECT * FROM categories').fetchall()
-        result = [Category(cat['id'], cat['name'], cat['description']) for cat in categories]
-        conn.close()
-        return result
-
-def get_recipe_categories(recipe_id):
-    conn = get_db_connection()
-    categories = conn.execute('''
-        SELECT c.* FROM categories c
-        JOIN recipe_categories rc ON c.id = rc.category_id
-        WHERE rc.recipe_id = ?
-    ''', (recipe_id,)).fetchall()
-    conn.close()
-    return [Category(cat['id'], cat['name'], cat['description']) for cat in categories]
+class Category(db.Model):
+    __tablename__ = 'categories'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False)
+    description = db.Column(db.Text)

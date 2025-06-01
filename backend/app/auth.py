@@ -1,9 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash
-from .models import User
-from .database import get_db_connection
-import sqlite3
+from .models import User, db
 
 auth = Blueprint('auth', __name__)
 
@@ -34,14 +32,13 @@ def signup():
         return jsonify({'error': message}) if request.is_json else render_template('signup.html', error=message)
 
     try:
-        conn = get_db_connection()
         # Check for existing username
-        if conn.execute('SELECT id FROM users WHERE username = ?', (username,)).fetchone():
+        if User.query.filter_by(username=username).first():
             message = 'Username already exists'
             return jsonify({'error': message}) if request.is_json else render_template('signup.html', error=message)
 
         # Check for existing email
-        if conn.execute('SELECT id FROM users WHERE email = ?', (email,)).fetchone():
+        if User.query.filter_by(email=email).first():
             message = 'Email already exists'
             return jsonify({'error': message}) if request.is_json else render_template('signup.html', error=message)
 
@@ -53,11 +50,10 @@ def signup():
             message = 'Please enter a valid email address'
             return jsonify({'error': message}) if request.is_json else render_template('signup.html', error=message)
 
-        password_hash = generate_password_hash(password)
-        cursor = conn.execute('INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)',
-                    (username, email, password_hash))
-        user_id = cursor.lastrowid
-        conn.commit()
+        new_user = User(username=username, email=email)
+        new_user.set_password(password)
+        db.session.add(new_user)
+        db.session.commit()
 
         if request.is_json:
             return jsonify({'success': True, 'message': 'Registration successful! Please log in.'})
@@ -65,14 +61,10 @@ def signup():
             flash('Registration successful! Please log in.')
             return redirect(url_for('auth.login'))
 
-    except sqlite3.IntegrityError as e:
-        message = 'Registration failed. Username or email already exists.'
-        return jsonify({'error': message}) if request.is_json else render_template('signup.html', error=message)
-    except sqlite3.OperationalError as e:
+    except Exception as e:
+        db.session.rollback()
         message = 'Registration failed. Please try again.'
         return jsonify({'error': message}) if request.is_json else render_template('signup.html', error=message)
-    finally:
-        conn.close()
 
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
@@ -95,34 +87,28 @@ def login():
         return jsonify({'error': message, 'success': False}), 400
 
     try:
-        # Get database connection and check user directly
-        conn = get_db_connection()
-        user_data = conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
-        print(f"User found in database: {user_data is not None}")  # Debug log
+        user = User.query.filter_by(username=username).first()
+        print(f"User found in database: {user is not None}")  # Debug log
         
-        if user_data:
-            user = User(user_data['id'], user_data['username'], user_data['email'], user_data['password_hash'])
-            print(f"Password check result: {user.check_password(password)}")  # Debug log
+        if user and user.check_password(password):
+            login_user(user, remember=True)
+            print("Login successful")  # Debug log
             
-            if user.check_password(password):
-                login_user(user, remember=True)
-                print("Login successful")  # Debug log
+            if request.is_json:
+                response = jsonify({
+                    'success': True,
+                    'message': 'Login successful',
+                    'user': {
+                        'id': user.id,
+                        'username': user.username,
+                        'email': user.email
+                    }
+                })
+                response.headers.add('Access-Control-Allow-Credentials', 'true')
+                response.headers.add('Access-Control-Allow-Origin', request.headers.get('Origin'))
+                return response
                 
-                if request.is_json:
-                    response = jsonify({
-                        'success': True,
-                        'message': 'Login successful',
-                        'user': {
-                            'id': user.id,
-                            'username': user.username,
-                            'email': user.email
-                        }
-                    })
-                    response.headers.add('Access-Control-Allow-Credentials', 'true')
-                    response.headers.add('Access-Control-Allow-Origin', request.headers.get('Origin'))
-                    return response
-                    
-                return redirect(url_for('auth.index'))
+            return redirect(url_for('auth.index'))
             
         message = 'Invalid username or password'
         print(f"Login failed: {message}")  # Debug log
@@ -132,8 +118,6 @@ def login():
         print(f"Error during login: {str(e)}")  # Debug log
         message = 'Login failed. Please try again.'
         return jsonify({'error': message, 'success': False}), 500
-    finally:
-        conn.close()
 
 @auth.route('/check-auth')
 def check_auth():
@@ -155,4 +139,18 @@ def logout():
     logout_user()
     if request.headers.get('Accept') == 'application/json':
         return jsonify({'success': True})
-    return redirect(url_for('auth.index')) 
+    return redirect(url_for('auth.index'))
+
+@auth.route('/users/<int:user_id>', methods=['GET'])
+@login_required
+def get_user(user_id):
+    """Get user information by ID"""
+    try:
+        user = User.query.get_or_404(user_id)
+        return jsonify({
+            'id': user.id,
+            'username': user.username,
+            'email': user.email if user.id == current_user.id else None
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500 

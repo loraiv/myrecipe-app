@@ -14,6 +14,7 @@ interface RecipeFormData {
   instructions: string;
   category_ids: number[];
   user_id?: number;
+  author?: string;
 }
 
 const RecipeForm: React.FC = () => {
@@ -82,7 +83,9 @@ const RecipeForm: React.FC = () => {
           description: data.description || '',
           ingredients: data.ingredients || '',
           instructions: data.instructions || '',
-          category_ids: data.categories ? data.categories.map((c: Category) => c.id) : []
+          category_ids: data.categories ? data.categories.map((c: Category) => c.id) : [],
+          user_id: data.user_id,
+          author: data.author
         });
         setIsOwner(user?.id === data.user_id);
       } else if (response.status === 404) {
@@ -169,6 +172,13 @@ const RecipeForm: React.FC = () => {
       <div className="recipe-form">
         <h2>{formData.title}</h2>
         <div className="recipe-content">
+          <p className="author">
+            <strong>By: </strong>
+            <Link to={`/users/${formData.user_id}`} className="author-link">
+              {formData.author}
+            </Link>
+          </p>
+          
           <p><strong>Description:</strong></p>
           <p>{formData.description}</p>
           
@@ -191,6 +201,11 @@ const RecipeForm: React.FC = () => {
         </div>
         <div className="form-actions">
           <Link to="/recipes" className="back-btn">Back to Recipes</Link>
+          {isOwner && (
+            <Link to={`/recipes/${id}/edit`} className="edit-recipe-btn">
+              Edit Recipe
+            </Link>
+          )}
         </div>
       </div>
     );

@@ -123,6 +123,12 @@ const App: React.FC = () => {
                 isAuthenticated ? <Profile /> : <Navigate to="/login" replace />
               }
             />
+            <Route
+              path="/users/:userId"
+              element={
+                isAuthenticated ? <Profile /> : <Navigate to="/login" replace />
+              }
+            />
           </Routes>
         </main>
       </div>

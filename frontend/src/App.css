@@ -357,6 +357,22 @@ button:hover {
   margin-bottom: 1rem;
 }
 
+.recipe-content .author {
+  color: #666;
+  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
+}
+
+.recipe-content .author-link {
+  color: #007bff;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.recipe-content .author-link:hover {
+  text-decoration: underline;
+}
+
 .recipe-content pre {
   background-color: #f8f9fa;
   padding: 1rem;
