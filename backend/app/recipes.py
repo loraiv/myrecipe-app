@@ -1,13 +1,13 @@
 from flask import Blueprint, request, jsonify
 from flask_login import login_required, current_user
-from .models import Recipe, Category, db
+from .models import Recipe, db
 from datetime import datetime
 
 recipes = Blueprint('recipes', __name__)
 
 @recipes.route('/categories', methods=['GET'])
 def get_categories():
-    categories = Category.query.all()
+    # categories = Category.query.all()
     return jsonify([{
         'id': category.id,
         'name': category.name,
@@ -18,12 +18,12 @@ def get_categories():
 @login_required
 def create_category():
     data = request.get_json()
-    category = Category(
-        name=data['name'],
-        description=data.get('description', '')
-    )
-    db.session.add(category)
-    db.session.commit()
+    # category = Category(
+    #     name=data['name'],
+    #     description=data.get('description', '')
+    # )
+    # db.session.add(category)
+    # db.session.commit()
     return jsonify({
         'message': 'Category created successfully',
         'category': {
@@ -77,7 +77,7 @@ def create_recipe():
         
         # Handle categories if provided
         if 'categories' in data and isinstance(data['categories'], list):
-            categories = Category.query.filter(Category.id.in_(data['categories'])).all()
+            # categories = Category.query.filter(Category.id.in_(data['categories'])).all()
             recipe.categories = categories
         
         db.session.add(recipe)
@@ -119,7 +119,7 @@ def update_recipe(recipe_id):
         
         # Update categories if provided
         if 'category_ids' in data:
-            categories = Category.query.filter(Category.id.in_(data['category_ids'])).all()
+            # categories = Category.query.filter(Category.id.in_(data['category_ids'])).all()
             recipe.categories = categories
         
         db.session.commit()
