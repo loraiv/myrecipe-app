@@ -68,6 +68,9 @@ Example POST body:
 }
 ```
 
+## Run in browser
+https://myrecipe-app-production.up.railway.app/
+
 ## Testing
 - Run all tests with:
   ```bash
