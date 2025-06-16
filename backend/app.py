@@ -43,9 +43,9 @@ class User(db.Model):
     password_hash = db.Column(db.String(128))
     profile_picture = db.Column(db.String(200))
     is_admin = db.Column(db.Boolean, default=False)
-    recipes = db.relationship('Recipe', backref='author', lazy=True)
-    comments = db.relationship('Comment', backref='author', lazy=True)
-    favorites = db.relationship('Favorite', backref='user', lazy=True)
+    recipes = db.relationship('Recipe', backref='author', lazy=True, cascade='all, delete-orphan')
+    comments = db.relationship('Comment', backref='author', lazy=True, cascade='all, delete-orphan')
+    favorites = db.relationship('Favorite', backref='user', lazy=True, cascade='all, delete-orphan')
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -311,11 +311,16 @@ def edit_profile():
 def delete_account():
     if request.method == 'POST':
         user = User.query.get(current_user.id)
-        logout_user()
-        db.session.delete(user)
-        db.session.commit()
-        flash('Акаунтът е изтрит!')
-        return redirect(url_for('signup'))
+        try:
+            logout_user()
+            db.session.delete(user)
+            db.session.commit()
+            flash('Акаунтът е изтрит!')
+            return redirect(url_for('signup'))
+        except Exception as e:
+            db.session.rollback()
+            flash('Възникна грешка при изтриване на акаунта. Моля, опитайте отново.')
+            return redirect(url_for('profile', username=current_user.username))
     return render_template('delete_account.html')
 
 @app.route('/admin')
