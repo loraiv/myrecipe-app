@@ -1,91 +1,199 @@
-<!DOCTYPE html>
-<html lang="bg">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ recipe.title }}</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-</head>
-<body class="bg-light">
-<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm mb-4">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="{{ url_for('index') }}">RecipeApp</a>
-    <div class="d-flex">
-      {% if current_user.is_authenticated %}
-        <a class="nav-link" href="{{ url_for('profile', username=current_user.username) }}">Профил</a>
-        <a class="nav-link" href="{{ url_for('logout') }}">Изход</a>
-      {% else %}
-        <a class="nav-link" href="{{ url_for('login') }}">Вход</a>
-        <a class="nav-link" href="{{ url_for('signup') }}">Регистрация</a>
-      {% endif %}
-    </div>
-  </div>
-</nav>
-<div class="container">
-    <div class="card mb-4 position-relative">
-        {% if current_user.is_authenticated and recipe.author == current_user %}
-            <div class="position-absolute top-0 end-0 m-2">
-                <a href="{{ url_for('edit_recipe', recipe_id=recipe.id) }}" class="btn btn-outline-secondary btn-sm">Редактирай</a>
-                <form method="POST" style="display:inline;" onsubmit="return confirm('Сигурни ли сте, че искате да изтриете тази рецепта?')">
-                    <button type="submit" name="delete_recipe" class="btn btn-outline-danger btn-sm">Изтрий</button>
-                </form>
+{% extends "base.html" %}
+
+{% block title %}{{ recipe.title }} - RecipeApp{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            {% if recipe.image %}
+            <div class="position-relative">
+                <img src="{{ url_for('static', filename='recipe_images/' ~ recipe.image) }}" 
+                     class="card-img-top" alt="{{ recipe.title }}" style="max-height: 400px; object-fit: cover;">
+                {% if current_user.is_authenticated and recipe.author == current_user %}
+                <div class="position-absolute top-0 end-0 m-3">
+                    <div class="btn-group">
+                        <a href="{{ url_for('edit_recipe', recipe_id=recipe.id) }}" class="btn btn-light">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <form method="POST" style="display:inline;" onsubmit="return confirm('Сигурни ли сте, че искате да изтриете тази рецепта?')">
+                            <button type="submit" name="delete_recipe" class="btn btn-light">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
             </div>
-        {% endif %}
-        {% if recipe.image %}
-            <img src="{{ url_for('static', filename='recipe_images/' ~ recipe.image) }}" class="card-img-top" alt="Recipe Image">
-        {% endif %}
-        <div class="card-body">
-            <h2 class="card-title">{{ recipe.title }}</h2>
-            <p class="card-text">{{ recipe.description }}</p>
-            <p><strong>Съставки:</strong> {{ recipe.ingredients }}</p>
-            <p><strong>Инструкции:</strong> {{ recipe.instructions }}</p>
-            <p><strong>Автор:</strong> <a href="{{ url_for('profile', username=recipe.author.username) }}">{{ recipe.author.username }}</a></p>
-            <p><strong>Среден рейтинг:</strong> {{ recipe.average_rating if recipe.average_rating is not none else 'Няма' }}</p>
-            <p><strong>Време за готвене:</strong> {{ recipe.cooking_time }} минути</p>
-            <div class="d-flex align-items-center mt-2">
-                <form method="POST" action="{{ url_for('favorite_recipe', recipe_id=recipe.id) }}" style="display:inline;">
-                  {% if current_user.is_authenticated and not recipe.favorites|selectattr('user_id', 'equalto', current_user.id)|list %}
-                    <button type="submit" class="btn btn-outline-danger btn-sm">&#10084; Харесай</button>
-                  {% endif %}
-                </form>
-                <form method="POST" action="{{ url_for('unfavorite_recipe', recipe_id=recipe.id) }}" style="display:inline;">
-                  {% if current_user.is_authenticated and recipe.favorites|selectattr('user_id', 'equalto', current_user.id)|list %}
-                    <button type="submit" class="btn btn-danger btn-sm">&#10084; Премахни</button>
-                  {% endif %}
-                </form>
-                <span class="ms-2">{{ recipe.favorites|length }} &#10084;</span>
+            {% endif %}
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h1 class="card-title h2 mb-0">{{ recipe.title }}</h1>
+                    <div class="d-flex align-items-center">
+                        {% if current_user.is_authenticated %}
+                        <form method="POST" action="{{ url_for('favorite_recipe', recipe_id=recipe.id) }}" class="me-2">
+                            {% if not recipe.favorites|selectattr('user_id', 'equalto', current_user.id)|list %}
+                            <button type="submit" class="btn btn-light favorite-btn">
+                                <i class="bi bi-heart"></i>
+                            </button>
+                            {% endif %}
+                        </form>
+                        <form method="POST" action="{{ url_for('unfavorite_recipe', recipe_id=recipe.id) }}" class="me-2">
+                            {% if recipe.favorites|selectattr('user_id', 'equalto', current_user.id)|list %}
+                            <button type="submit" class="btn btn-light favorite-btn">
+                                <i class="bi bi-heart-fill text-danger"></i>
+                            </button>
+                            {% endif %}
+                        </form>
+                        {% endif %}
+                        <span class="text-muted">
+                            <i class="bi bi-heart-fill text-danger"></i> {{ recipe.favorites|length }}
+                        </span>
+                    </div>
+                </div>
+                <div class="recipe-meta mb-4">
+                    <span class="me-3">
+                        <i class="bi bi-clock"></i> {{ recipe.cooking_time }} мин
+                    </span>
+                    <span class="me-3">
+                        <i class="bi bi-star-fill text-warning"></i> 
+                        {{ "%.1f"|format(recipe.average_rating) if recipe.average_rating is not none else 'Няма' }}
+                    </span>
+                    <a href="{{ url_for('profile', username=recipe.author.username) }}" class="text-decoration-none">
+                        {% if recipe.author.profile_picture %}
+                        <img src="{{ url_for('static', filename='profile_pics/' ~ recipe.author.profile_picture) }}" 
+                             alt="Profile" width="24" class="rounded-circle me-1">
+                        {% else %}
+                        <i class="bi bi-person-circle me-1"></i>
+                        {% endif %}
+                        {{ recipe.author.username }}
+                    </a>
+                </div>
+                <p class="card-text lead mb-4">{{ recipe.description }}</p>
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <h3 class="h5 mb-3">Съставки</h3>
+                        <div class="bg-light p-3 rounded">
+                            {{ recipe.ingredients|nl2br }}
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <h3 class="h5 mb-3">Инструкции</h3>
+                        <div class="bg-light p-3 rounded">
+                            {{ recipe.instructions|nl2br }}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    <h3>Коментари</h3>
-    {% if comments %}
-        <ul class="list-group mb-4">
-            {% for comment in comments %}
-                <li class="list-group-item">
-                    <strong>{{ comment.author.username }}</strong> - Оценка: {{ comment.rating }}<br>
-                    {{ comment.content }}
-                </li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <div class="alert alert-info">Все още няма коментари.</div>
-    {% endif %}
-    {% if current_user.is_authenticated %}
-    <h4>Добави коментар</h4>
-    <form method="POST" class="mb-4">
-        <div class="mb-3">
-            <label class="form-label">Оценка (1-5):</label>
-            <input type="number" name="rating" min="1" max="5" class="form-control" required>
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h3 class="h5 mb-3">Коментари</h3>
+                {% if current_user.is_authenticated %}
+                <form method="POST" class="mb-4">
+                    <div class="mb-3">
+                        <label class="form-label">Оценка</label>
+                        <div class="rating-input">
+                            {% for i in range(5) %}
+                            <input type="radio" name="rating" value="{{ i + 1 }}" id="rating{{ i + 1 }}" required>
+                            <label for="rating{{ i + 1 }}"><i class="bi bi-star"></i></label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Коментар</label>
+                        <textarea name="content" class="form-control" rows="3" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-send"></i> Изпрати
+                    </button>
+                </form>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> Моля, <a href="{{ url_for('login') }}" class="alert-link">влезте</a> за да коментирате.
+                </div>
+                {% endif %}
+                {% if comments %}
+                <div class="comments-list">
+                    {% for comment in comments %}
+                    <div class="comment mb-3">
+                        <div class="comment-header">
+                            <div class="d-flex align-items-center">
+                                {% if comment.author.profile_picture %}
+                                <img src="{{ url_for('static', filename='profile_pics/' ~ comment.author.profile_picture) }}" 
+                                     alt="Profile" width="32" class="rounded-circle me-2">
+                                {% else %}
+                                <i class="bi bi-person-circle me-2"></i>
+                                {% endif %}
+                                <div>
+                                    <div class="comment-author">{{ comment.author.username }}</div>
+                                    <div class="comment-date">{{ comment.created_at.strftime('%d.%m.%Y %H:%M') }}</div>
+                                </div>
+                            </div>
+                            <div class="rating">
+                                {% for i in range(comment.rating) %}
+                                <i class="bi bi-star-fill"></i>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="comment-content mt-2">
+                            {{ comment.content }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> Все още няма коментари.
+                </div>
+                {% endif %}
+            </div>
         </div>
-        <div class="mb-3">
-            <label class="form-label">Коментар:</label>
-            <textarea name="content" class="form-control" required></textarea>
-        </div>
-        <button type="submit" class="btn btn-primary">Изпрати</button>
-    </form>
-    {% else %}
-        <div class="alert alert-warning">Само влезли потребители могат да коментират.</div>
-    {% endif %}
-    <a href="{{ url_for('index') }}" class="btn btn-secondary">Назад</a>
+    </div>
 </div>
-</body>
-</html> 
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.rating-input {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+}
+
+.rating-input input {
+    display: none;
+}
+
+.rating-input label {
+    cursor: pointer;
+    font-size: 1.5rem;
+    color: #ddd;
+    padding: 0 0.1em;
+}
+
+.rating-input input:checked ~ label,
+.rating-input label:hover,
+.rating-input label:hover ~ label {
+    color: #f1c40f;
+}
+
+.comments-list {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.comment {
+    padding: 1rem;
+    border-radius: 8px;
+    background-color: var(--light-gray);
+}
+
+.comment-content {
+    color: var(--text-color);
+    font-size: 0.95rem;
+}
+</style>
+{% endblock %} 

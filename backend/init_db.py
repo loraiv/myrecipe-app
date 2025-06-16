@@ -1,60 +1,68 @@
-from app.database import get_db_connection, init_db
-from app import create_app, db
-from app.models import User, Category
+from app import app, db
+from app import User
 import os
 
 def check_tables():
-    conn = get_db_connection()
+    """Check if all required tables exist and have the correct structure."""
     try:
         # Check users table
-        users = conn.execute("SELECT * FROM users").fetchall()
+        users = User.query.all()
         print(f"Users table exists with {len(users)} records")
         
-        # Check if tables exist
-        tables = conn.execute("""
-            SELECT name FROM sqlite_master 
-            WHERE type='table' AND name IN ('users', 'recipes', 'categories', 'recipe_categories')
-        """).fetchall()
-        print("Existing tables:", [table['name'] for table in tables])
+        # Check recipes table
+        recipes = db.session.execute("SELECT * FROM recipes").fetchall()
+        print(f"Recipes table exists with {len(recipes)} records")
+        
+        # Check comments table
+        comments = db.session.execute("SELECT * FROM comments").fetchall()
+        print(f"Comments table exists with {len(comments)} records")
+        
+        # Check favorites table
+        favorites = db.session.execute("SELECT * FROM favorites").fetchall()
+        print(f"Favorites table exists with {len(favorites)} records")
         
     except Exception as e:
         print(f"Error checking tables: {str(e)}")
-    finally:
-        conn.close()
 
 def init_database():
-    app = create_app()
+    """Initialize the database with required tables."""
     with app.app_context():
+        # Drop all existing tables
         db.drop_all()
+        print("Dropped all existing tables")
+        
+        # Create all tables
         db.create_all()
-        # Create default categories
-        default_categories = [
-            'Основно ястие',
-            'Десерт',
-            'Салата',
-            'Супа',
-            'Вегетарианско',
-            'Бързо',
-            'Здравословно',
-            'Международна кухня',
-            'Dinner',
-            'Lunch',
-            'Breakfast',
-            'Snack',
-            'Appetizer',
-            'Beverage'
-        ]
-        for name in default_categories:
-            if not Category.query.filter_by(name=name).first():
-                db.session.add(Category(name=name))
+        print("Created all tables")
+        
+        # Create admin user
+        admin = User(
+            username='admin',
+            email='admin@example.com',
+            is_admin=True
+        )
+        admin.set_password('admin123')
+        db.session.add(admin)
+        
+        # Create test user
+        test_user = User(
+            username='test',
+            email='test@example.com'
+        )
+        test_user.set_password('test123')
+        db.session.add(test_user)
+        
+        # Commit changes
         db.session.commit()
-        print("Default categories created!")
+        print("Created default users (admin and test)")
 
 if __name__ == '__main__':
+    # Remove existing database if it exists
     db_path = os.path.join(os.path.dirname(__file__), 'recipes.db')
     if os.path.exists(db_path):
         os.remove(db_path)
         print(f"Removed existing database at {db_path}")
+    
     print("Initializing database...")
     init_database()
     

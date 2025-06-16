@@ -6,6 +6,11 @@
     --text-color: #2c3e50;
     --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     --hover-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    --success-color: #2ecc71;
+    --warning-color: #f1c40f;
+    --danger-color: #e74c3c;
+    --gray-color: #95a5a6;
+    --light-gray: #ecf0f1;
 }
 
 body {
@@ -13,6 +18,9 @@ body {
     background-color: var(--background-color);
     color: var(--text-color);
     line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Navbar Styling */
@@ -20,31 +28,45 @@ body {
     background-color: white !important;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     padding: 1rem 0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
 }
 
 .navbar-brand {
-    font-weight: 600;
+    font-weight: 700;
     color: var(--primary-color) !important;
     font-size: 1.5rem;
+    letter-spacing: -0.5px;
 }
 
 .nav-link {
     color: var(--primary-color) !important;
     font-weight: 500;
-    transition: color 0.3s ease;
+    transition: all 0.3s ease;
+    padding: 0.5rem 1rem !important;
+    border-radius: 5px;
 }
 
 .nav-link:hover {
     color: var(--secondary-color) !important;
+    background-color: var(--light-gray);
+}
+
+.nav-link.active {
+    color: var(--secondary-color) !important;
+    background-color: var(--light-gray);
 }
 
 /* Card Styling */
 .card {
     border: none;
-    border-radius: 10px;
+    border-radius: 15px;
     box-shadow: var(--card-shadow);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition: all 0.3s ease;
     overflow: hidden;
+    background-color: white;
+    height: 100%;
 }
 
 .card:hover {
@@ -55,11 +77,17 @@ body {
 .card-img-top {
     height: 200px;
     object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.card:hover .card-img-top {
+    transform: scale(1.05);
 }
 
 .card-title {
     color: var(--primary-color);
     font-weight: 600;
+    margin-bottom: 0.5rem;
 }
 
 .card-title a {
@@ -72,12 +100,20 @@ body {
     color: var(--secondary-color);
 }
 
+.card-text {
+    color: var(--gray-color);
+    font-size: 0.9rem;
+}
+
 /* Button Styling */
 .btn {
-    border-radius: 5px;
-    padding: 0.5rem 1.5rem;
+    border-radius: 8px;
+    padding: 0.6rem 1.5rem;
     font-weight: 500;
     transition: all 0.3s ease;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
 }
 
 .btn-primary {
@@ -88,29 +124,49 @@ body {
 .btn-primary:hover {
     background-color: #34495e;
     border-color: #34495e;
+    transform: translateY(-2px);
 }
 
 .btn-success {
-    background-color: var(--secondary-color);
-    border-color: var(--secondary-color);
+    background-color: var(--success-color);
+    border-color: var(--success-color);
 }
 
 .btn-success:hover {
+    background-color: #27ae60;
+    border-color: #27ae60;
+    transform: translateY(-2px);
+}
+
+.btn-danger {
+    background-color: var(--danger-color);
+    border-color: var(--danger-color);
+}
+
+.btn-danger:hover {
     background-color: #c0392b;
     border-color: #c0392b;
+    transform: translateY(-2px);
 }
 
 /* Form Styling */
 .form-control {
-    border-radius: 5px;
-    border: 1px solid #ddd;
-    padding: 0.75rem;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    border-radius: 8px;
+    border: 2px solid var(--light-gray);
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
 }
 
 .form-control:focus {
     border-color: var(--accent-color);
     box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+}
+
+.form-label {
+    font-weight: 500;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
 }
 
 /* Recipe Cards */
@@ -124,74 +180,144 @@ body {
 
 .recipe-card .card-footer {
     background-color: white;
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    border-top: 1px solid var(--light-gray);
     padding: 1rem 1.5rem;
+}
+
+.recipe-meta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    color: var(--gray-color);
+    font-size: 0.9rem;
+}
+
+.recipe-meta i {
+    color: var(--accent-color);
 }
 
 /* Profile Picture */
 .profile-picture {
-    width: 120px;
-    height: 120px;
+    width: 150px;
+    height: 150px;
     object-fit: cover;
     border-radius: 50%;
-    border: 3px solid white;
+    border: 4px solid white;
     box-shadow: var(--card-shadow);
+    transition: transform 0.3s ease;
+}
+
+.profile-picture:hover {
+    transform: scale(1.05);
 }
 
 /* Search Bar */
 .search-container {
     position: relative;
+    max-width: 500px;
+    margin: 0 auto;
 }
 
 .search-container .form-control {
-    padding-right: 40px;
+    padding-right: 50px;
+    border-radius: 25px;
+    background-color: white;
 }
 
 .search-container .btn {
     position: absolute;
-    right: 0;
-    top: 0;
-    height: 100%;
-    border-radius: 0 5px 5px 0;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* Comments Section */
 .comment-section {
     background-color: white;
-    border-radius: 10px;
-    padding: 1.5rem;
+    border-radius: 15px;
+    padding: 2rem;
     margin-top: 2rem;
+    box-shadow: var(--card-shadow);
 }
 
 .comment {
-    border-bottom: 1px solid #eee;
-    padding: 1rem 0;
+    border-bottom: 1px solid var(--light-gray);
+    padding: 1.5rem 0;
 }
 
 .comment:last-child {
     border-bottom: none;
 }
 
+.comment-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.comment-author {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.comment-date {
+    color: var(--gray-color);
+    font-size: 0.9rem;
+}
+
 /* Rating Stars */
 .rating {
-    color: #f1c40f;
+    color: var(--warning-color);
     font-size: 1.2rem;
+}
+
+.rating i {
+    margin-right: 2px;
 }
 
 /* Favorite Button */
 .favorite-btn {
-    color: var(--secondary-color);
-    transition: transform 0.3s ease;
+    color: var(--danger-color);
+    transition: all 0.3s ease;
+    font-size: 1.2rem;
 }
 
 .favorite-btn:hover {
     transform: scale(1.1);
+    color: var(--danger-color);
+}
+
+/* Flash Messages */
+.alert {
+    border-radius: 10px;
+    border: none;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--card-shadow);
+}
+
+.alert-success {
+    background-color: var(--success-color);
+    color: white;
+}
+
+.alert-danger {
+    background-color: var(--danger-color);
+    color: white;
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
     .card-img-top {
-        height: 150px;
+        height: 180px;
     }
     
     .navbar-brand {
@@ -200,6 +326,15 @@ body {
     
     .container {
         padding: 0 1rem;
+    }
+    
+    .profile-picture {
+        width: 120px;
+        height: 120px;
+    }
+    
+    .btn {
+        padding: 0.5rem 1rem;
     }
 }
 
@@ -217,4 +352,38 @@ body {
 
 .fade-in {
     animation: fadeIn 0.5s ease-out;
+}
+
+/* Footer */
+.footer {
+    background-color: white;
+    padding: 2rem 0;
+    margin-top: auto;
+    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.footer-text {
+    color: var(--gray-color);
+    font-size: 0.9rem;
+}
+
+.social-links {
+    display: flex;
+    gap: 1rem;
+}
+
+.social-links a {
+    color: var(--primary-color);
+    font-size: 1.2rem;
+    transition: color 0.3s ease;
+}
+
+.social-links a:hover {
+    color: var(--secondary-color);
 } 

@@ -1,32 +1,45 @@
-<!DOCTYPE html>
-<html lang="bg">
-<head>
-    <meta charset="UTF-8">
-    <title>Редактирай профилна снимка</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-</head>
-<body class="bg-light">
-<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm mb-4">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="{{ url_for('index') }}">RecipeApp</a>
-    <div class="d-flex">
-      <a class="nav-link" href="{{ url_for('profile', username=current_user.username) }}">Профил</a>
-      <a class="nav-link" href="{{ url_for('logout') }}">Изход</a>
-    </div>
-  </div>
-</nav>
+{% extends "base.html" %}
+
+{% block title %}Редактирай профил - RecipeApp{% endblock %}
+
+{% block content %}
 <div class="container">
-    <h1 class="mb-4">Редактирай профилна снимка</h1>
-    <form method="POST" enctype="multipart/form-data" class="card p-4 shadow-sm bg-white">
-        <div class="mb-3">
-            {% if user.profile_picture %}
-                <img src="{{ url_for('static', filename='profile_pics/' ~ user.profile_picture) }}" alt="Profile Picture" width="120" class="rounded-circle mb-3">
-            {% endif %}
-            <input type="file" name="profile_picture" accept="image/*" class="form-control" required>
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <h1 class="h3 mb-4 text-center">Редактирай профил</h1>
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="text-center mb-4">
+                            {% if user.profile_picture %}
+                            <img src="{{ url_for('static', filename='profile_pics/' ~ user.profile_picture) }}" 
+                                 alt="Profile Picture" class="rounded-circle mb-3" 
+                                 style="width: 150px; height: 150px; object-fit: cover;">
+                            {% else %}
+                            <div class="rounded-circle bg-light mb-3 mx-auto" 
+                                 style="width: 150px; height: 150px; display: flex; align-items: center; justify-content: center;">
+                                <i class="bi bi-person-circle" style="font-size: 100px;"></i>
+                            </div>
+                            {% endif %}
+                            <div class="mb-3">
+                                <label for="profile_picture" class="form-label">Избери нова профилна снимка</label>
+                                <input type="file" name="profile_picture" id="profile_picture" 
+                                       accept="image/*" class="form-control" required>
+                                <div class="form-text">Препоръчителен размер: 300x300 пиксела</div>
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg"></i> Запази промените
+                            </button>
+                            <a href="{{ url_for('profile', username=current_user.username) }}" class="btn btn-light">
+                                <i class="bi bi-arrow-left"></i> Назад към профила
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
-        <button type="submit" class="btn btn-primary">Обнови</button>
-        <a href="{{ url_for('profile', username=current_user.username) }}" class="btn btn-secondary ms-2">Назад</a>
-    </form>
+    </div>
 </div>
-</body>
-</html> 
+{% endblock %} 

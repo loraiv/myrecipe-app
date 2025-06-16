@@ -26,23 +26,27 @@
                         <i class="bi bi-search"></i>
                     </button>
                 </form>
-                <div class="d-flex align-items-center">
+                <ul class="navbar-nav ms-auto">
                     {% if current_user.is_authenticated %}
                         {% if current_user.is_admin %}
-                            <a class="nav-link" href="{{ url_for('admin_panel') }}">
-                                <i class="bi bi-gear"></i> Админ
-                            </a>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('admin_panel') }}">
+                                    <i class="bi bi-gear"></i> Админ
+                                </a>
+                            </li>
                         {% endif %}
-                        <a class="nav-link" href="{{ url_for('add_recipe') }}">
-                            <i class="bi bi-plus-circle"></i> Нова рецепта
-                        </a>
-                        <div class="dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('add_recipe') }}">
+                                <i class="bi bi-plus-circle"></i> Нова рецепта
+                            </a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown">
                                 {% if current_user.profile_picture %}
                                     <img src="{{ url_for('static', filename='profile_pics/' ~ current_user.profile_picture) }}" 
-                                         alt="Profile" class="rounded-circle" width="32" height="32">
+                                         alt="Profile" class="rounded-circle me-2" width="32" height="32">
                                 {% else %}
-                                    <i class="bi bi-person-circle"></i>
+                                    <i class="bi bi-person-circle me-2"></i>
                                 {% endif %}
                                 {{ current_user.username }}
                             </a>
@@ -53,21 +57,37 @@
                                     </a>
                                 </li>
                                 <li>
+                                    <a class="dropdown-item" href="{{ url_for('edit_profile') }}">
+                                        <i class="bi bi-pencil"></i> Редактирай профил
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item text-danger" href="{{ url_for('delete_account') }}">
+                                        <i class="bi bi-trash"></i> Изтрий акаунт
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
                                     <a class="dropdown-item" href="{{ url_for('logout') }}">
                                         <i class="bi bi-box-arrow-right"></i> Изход
                                     </a>
                                 </li>
                             </ul>
-                        </div>
+                        </li>
                     {% else %}
-                        <a class="nav-link" href="{{ url_for('login') }}">
-                            <i class="bi bi-box-arrow-in-right"></i> Вход
-                        </a>
-                        <a class="nav-link" href="{{ url_for('signup') }}">
-                            <i class="bi bi-person-plus"></i> Регистрация
-                        </a>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('login') }}">
+                                <i class="bi bi-box-arrow-in-right"></i> Вход
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('signup') }}">
+                                <i class="bi bi-person-plus"></i> Регистрация
+                            </a>
+                        </li>
                     {% endif %}
-                </div>
+                </ul>
             </div>
         </div>
     </nav>
@@ -87,16 +107,23 @@
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="bg-white py-4 mt-5">
+    <footer class="footer">
         <div class="container">
-            <div class="row">
-                <div class="col-md-6">
-                    <h5 class="text-primary">RecipeApp</h5>
-                    <p class="text-muted">Споделете вашите любими рецепти с света!</p>
+            <div class="footer-content">
+                <div class="footer-text">
+                    <h5 class="mb-2">RecipeApp</h5>
+                    <p class="mb-0">Споделете вашите любими рецепти с света!</p>
                 </div>
-                <div class="col-md-6 text-md-end">
-                    <p class="text-muted">&copy; 2024 RecipeApp. Всички права запазени.</p>
+                <div class="social-links">
+                    <a href="#" target="_blank"><i class="bi bi-facebook"></i></a>
+                    <a href="#" target="_blank"><i class="bi bi-instagram"></i></a>
+                    <a href="#" target="_blank"><i class="bi bi-twitter"></i></a>
+                    <a href="#" target="_blank"><i class="bi bi-github"></i></a>
                 </div>
+            </div>
+            <hr class="my-3">
+            <div class="text-center">
+                <p class="footer-text mb-0">&copy; 2024 RecipeApp. Всички права запазени.</p>
             </div>
         </div>
     </footer>

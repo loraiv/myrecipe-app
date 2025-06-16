@@ -1,91 +1,159 @@
-<!DOCTYPE html>
-<html lang="bg">
-<head>
-    <meta charset="UTF-8">
-    <title>Профил на {{ user.username }}</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-</head>
-<body class="bg-light">
-<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm mb-4">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="{{ url_for('index') }}">RecipeApp</a>
-    <div class="d-flex">
-      {% if current_user.is_authenticated %}
-        <a class="nav-link" href="{{ url_for('profile', username=current_user.username) }}">Профил</a>
-        <a class="nav-link" href="{{ url_for('logout') }}">Изход</a>
-      {% else %}
-        <a class="nav-link" href="{{ url_for('login') }}">Вход</a>
-        <a class="nav-link" href="{{ url_for('signup') }}">Регистрация</a>
-      {% endif %}
-    </div>
-  </div>
-</nav>
+{% extends "base.html" %}
+
+{% block title %}Профил на {{ user.username }} - RecipeApp{% endblock %}
+
+{% block content %}
 <div class="container">
-    <h1 class="mb-4">Профил на {{ user.username }}</h1>
-    {% if user.profile_picture %}
-        <img src="{{ url_for('static', filename='profile_pics/' ~ user.profile_picture) }}" alt="Profile Picture" width="120" class="rounded-circle mb-3">
-    {% endif %}
-    {% if current_user.is_authenticated and current_user.username == user.username %}
-        <a href="{{ url_for('edit_profile') }}" class="btn btn-outline-primary btn-sm mb-2">Редактирай профилна снимка</a>
-        <form method="POST" action="{{ url_for('delete_account') }}" style="display:inline;">
-            <button type="submit" class="btn btn-outline-danger btn-sm mb-2" onclick="return confirm('Сигурни ли сте, че искате да изтриете акаунта си?')">Изтрий акаунта</button>
-        </form>
-    {% endif %}
-    <p><strong>Email:</strong> {{ user.email }}</p>
-    <h2 class="mt-4">Рецепти на {{ user.username }}</h2>
     <div class="row">
-        {% for recipe in recipes %}
-            <div class="col-md-6 col-lg-4 mb-4">
-                <div class="card h-100">
-                    {% if recipe.image %}
-                        <img src="{{ url_for('static', filename='recipe_images/' ~ recipe.image) }}" class="card-img-top" alt="Recipe Image">
-                    {% endif %}
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            <a href="{{ url_for('recipe_detail', recipe_id=recipe.id) }}">{{ recipe.title }}</a>
-                        </h5>
-                        <p class="card-text">{{ recipe.description }}</p>
-                        <p><em>Съставки:</em> {{ recipe.ingredients }}</p>
-                        <p><em>Инструкции:</em> {{ recipe.instructions }}</p>
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-body text-center">
+                    {% if user.profile_picture %}
+                    <img src="{{ url_for('static', filename='profile_pics/' ~ user.profile_picture) }}" 
+                         alt="Profile Picture" class="rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                    {% else %}
+                    <div class="rounded-circle bg-light mb-3 mx-auto" style="width: 150px; height: 150px; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-person-circle" style="font-size: 100px;"></i>
                     </div>
+                    {% endif %}
+                    <h1 class="h3 mb-3">{{ user.username }}</h1>
+                    <p class="text-muted mb-3">
+                        <i class="bi bi-envelope"></i> {{ user.email }}
+                    </p>
                     {% if current_user.is_authenticated and current_user.username == user.username %}
-                    <div class="card-footer bg-white">
-                        <a href="{{ url_for('edit_recipe', recipe_id=recipe.id) }}" class="btn btn-outline-secondary btn-sm">Редактирай</a>
-                        <form method="POST" action="{{ url_for('delete_recipe', recipe_id=recipe.id) }}" style="display:inline;">
-                            <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Сигурни ли сте, че искате да изтриете тази рецепта?')">Изтрий</button>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('edit_profile') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-pencil"></i> Редактирай профил
+                        </a>
+                        <form method="POST" action="{{ url_for('delete_account') }}" class="d-grid">
+                            <button type="submit" class="btn btn-outline-danger" 
+                                    onclick="return confirm('Сигурни ли сте, че искате да изтриете акаунта си?')">
+                                <i class="bi bi-trash"></i> Изтрий акаунта
+                            </button>
                         </form>
                     </div>
                     {% endif %}
                 </div>
             </div>
-        {% else %}
-            <div class="col-12"><div class="alert alert-warning">Няма добавени рецепти.</div></div>
-        {% endfor %}
-    </div>
-    <h2 class="mt-4">Любими рецепти</h2>
-    <div class="row">
-        {% for recipe in favorites %}
-            <div class="col-md-6 col-lg-4 mb-4">
-                <div class="card h-100 border-danger">
-                    {% if recipe.image %}
-                        <img src="{{ url_for('static', filename='recipe_images/' ~ recipe.image) }}" class="card-img-top" alt="Recipe Image">
-                    {% endif %}
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            <a href="{{ url_for('recipe_detail', recipe_id=recipe.id) }}">{{ recipe.title }}</a>
-                        </h5>
-                        <p class="card-text">{{ recipe.description }}</p>
-                        <p><em>Съставки:</em> {{ recipe.ingredients }}</p>
-                        <p><em>Инструкции:</em> {{ recipe.instructions }}</p>
-                        <p><em>Среден рейтинг:</em> {{ recipe.average_rating if recipe.average_rating is not none else 'Няма' }}</p>
+        </div>
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header bg-white">
+                    <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#recipes" type="button" role="tab">
+                                <i class="bi bi-book"></i> Моите рецепти
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#favorites" type="button" role="tab">
+                                <i class="bi bi-heart"></i> Любими рецепти
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="recipes" role="tabpanel">
+                            {% if recipes %}
+                            <div class="row">
+                                {% for recipe in recipes %}
+                                <div class="col-md-6 mb-4">
+                                    <div class="card h-100">
+                                        {% if recipe.image %}
+                                        <img src="{{ url_for('static', filename='recipe_images/' ~ recipe.image) }}" 
+                                             class="card-img-top" alt="{{ recipe.title }}" style="height: 200px; object-fit: cover;">
+                                        {% endif %}
+                                        <div class="card-body">
+                                            <h5 class="card-title">
+                                                <a href="{{ url_for('recipe_detail', recipe_id=recipe.id) }}" class="text-decoration-none">
+                                                    {{ recipe.title }}
+                                                </a>
+                                            </h5>
+                                            <p class="card-text text-muted">{{ recipe.description[:100] }}{% if recipe.description|length > 100 %}...{% endif %}</p>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div class="recipe-meta">
+                                                    <span class="me-2">
+                                                        <i class="bi bi-clock"></i> {{ recipe.cooking_time }} мин
+                                                    </span>
+                                                    <span>
+                                                        <i class="bi bi-star-fill text-warning"></i> 
+                                                        {{ "%.1f"|format(recipe.average_rating) if recipe.average_rating is not none else 'Няма' }}
+                                                    </span>
+                                                </div>
+                                                {% if current_user.is_authenticated and current_user.username == user.username %}
+                                                <div class="btn-group">
+                                                    <a href="{{ url_for('edit_recipe', recipe_id=recipe.id) }}" class="btn btn-light btn-sm">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </a>
+                                                    <form method="POST" action="{{ url_for('delete_recipe', recipe_id=recipe.id) }}" style="display:inline;">
+                                                        <button type="submit" class="btn btn-light btn-sm" 
+                                                                onclick="return confirm('Сигурни ли сте, че искате да изтриете тази рецепта?')">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i> Няма добавени рецепти.
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="tab-pane fade" id="favorites" role="tabpanel">
+                            {% if favorites %}
+                            <div class="row">
+                                {% for recipe in favorites %}
+                                <div class="col-md-6 mb-4">
+                                    <div class="card h-100">
+                                        {% if recipe.image %}
+                                        <img src="{{ url_for('static', filename='recipe_images/' ~ recipe.image) }}" 
+                                             class="card-img-top" alt="{{ recipe.title }}" style="height: 200px; object-fit: cover;">
+                                        {% endif %}
+                                        <div class="card-body">
+                                            <h5 class="card-title">
+                                                <a href="{{ url_for('recipe_detail', recipe_id=recipe.id) }}" class="text-decoration-none">
+                                                    {{ recipe.title }}
+                                                </a>
+                                            </h5>
+                                            <p class="card-text text-muted">{{ recipe.description[:100] }}{% if recipe.description|length > 100 %}...{% endif %}</p>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div class="recipe-meta">
+                                                    <span class="me-2">
+                                                        <i class="bi bi-clock"></i> {{ recipe.cooking_time }} мин
+                                                    </span>
+                                                    <span>
+                                                        <i class="bi bi-star-fill text-warning"></i> 
+                                                        {{ "%.1f"|format(recipe.average_rating) if recipe.average_rating is not none else 'Няма' }}
+                                                    </span>
+                                                </div>
+                                                <form method="POST" action="{{ url_for('unfavorite_recipe', recipe_id=recipe.id) }}" style="display:inline;">
+                                                    <button type="submit" class="btn btn-light btn-sm">
+                                                        <i class="bi bi-heart-fill text-danger"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i> Няма любими рецепти.
+                            </div>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
-        {% else %}
-            <div class="col-12"><div class="alert alert-info">Няма любими рецепти.</div></div>
-        {% endfor %}
+        </div>
     </div>
-    <a href="{{ url_for('index') }}" class="btn btn-secondary mt-3">Назад към всички рецепти</a>
 </div>
-</body>
-</html> 
+{% endblock %} 
