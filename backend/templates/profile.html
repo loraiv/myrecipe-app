@@ -62,6 +62,29 @@
             <div class="col-12"><div class="alert alert-warning">Няма добавени рецепти.</div></div>
         {% endfor %}
     </div>
+    <h2 class="mt-4">Любими рецепти</h2>
+    <div class="row">
+        {% for recipe in favorites %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100 border-danger">
+                    {% if recipe.image %}
+                        <img src="{{ url_for('static', filename='recipe_images/' ~ recipe.image) }}" class="card-img-top" alt="Recipe Image">
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <a href="{{ url_for('recipe_detail', recipe_id=recipe.id) }}">{{ recipe.title }}</a>
+                        </h5>
+                        <p class="card-text">{{ recipe.description }}</p>
+                        <p><em>Съставки:</em> {{ recipe.ingredients }}</p>
+                        <p><em>Инструкции:</em> {{ recipe.instructions }}</p>
+                        <p><em>Среден рейтинг:</em> {{ recipe.average_rating if recipe.average_rating is not none else 'Няма' }}</p>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="col-12"><div class="alert alert-info">Няма любими рецепти.</div></div>
+        {% endfor %}
+    </div>
     <a href="{{ url_for('index') }}" class="btn btn-secondary mt-3">Назад към всички рецепти</a>
 </div>
 </body>

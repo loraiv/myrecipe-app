@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_cors import CORS
 import os
-from app.models import db, User, Recipe, Comment
+from app.models import db, User, Recipe, Comment, Favorite
 import uuid
 from werkzeug.utils import secure_filename
 
@@ -12,12 +12,19 @@ from werkzeug.utils import secure_filename
 login_manager = LoginManager()
 
 def create_app():
-    app = Flask(__name__)
+    app = Flask(__name__, template_folder='templates')
     CORS(app)
     basedir = os.path.abspath(os.path.dirname(__file__))
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'recipes.db')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SECRET_KEY'] = 'supersecretkey123'
+    app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads')
+    app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+
+    # Ensure upload directories exist
+    os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'profile_pics'), exist_ok=True)
+    os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'recipe_pics'), exist_ok=True)
+
     db.init_app(app)
     login_manager.init_app(app)
     login_manager.login_view = 'login'
@@ -29,30 +36,59 @@ def create_app():
     @app.route('/', methods=['GET', 'POST'])
     def index():
         query = request.args.get('q', '').strip()
+        sort = request.args.get('sort', '')
+        recipes_query = Recipe.query
         if query:
-            recipes = Recipe.query.join(User).filter(
+            recipes_query = recipes_query.join(User).filter(
                 (Recipe.title.ilike(f'%{query}%')) |
                 (Recipe.description.ilike(f'%{query}%')) |
                 (Recipe.ingredients.ilike(f'%{query}%')) |
                 (User.username.ilike(f'%{query}%'))
-            ).order_by(Recipe.id.desc()).all()
+            )
+        if sort == 'rating':
+            recipes = sorted(recipes_query.all(), key=lambda r: r.average_rating or 0, reverse=True)
         else:
-            recipes = Recipe.query.order_by(Recipe.id.desc()).all()
-        return render_template('index.html', recipes=recipes, search_query=query)
+            recipes = recipes_query.order_by(Recipe.id.desc()).all()
+        return render_template('index.html', recipes=recipes, search_query=query, sort=sort)
 
     @app.route('/recipe/<int:recipe_id>', methods=['GET', 'POST'])
     def recipe_detail(recipe_id):
         recipe = Recipe.query.get_or_404(recipe_id)
         if request.method == 'POST' and current_user.is_authenticated:
-            content = request.form['content']
-            rating = int(request.form['rating'])
-            comment = Comment(content=content, rating=rating, user_id=current_user.id, recipe_id=recipe.id)
-            db.session.add(comment)
-            db.session.commit()
-            flash('Коментарът е добавен!')
-            return redirect(url_for('recipe_detail', recipe_id=recipe.id))
+            if 'delete_recipe' in request.form and recipe.author == current_user:
+                db.session.delete(recipe)
+                db.session.commit()
+                flash('Рецептата е изтрита!')
+                return redirect(url_for('profile', username=current_user.username))
+            content = request.form.get('content')
+            rating = request.form.get('rating', type=int)
+            if content and rating:
+                comment = Comment(content=content, rating=rating, user_id=current_user.id, recipe_id=recipe.id)
+                db.session.add(comment)
+                db.session.commit()
+                flash('Коментарът е добавен!')
+                return redirect(url_for('recipe_detail', recipe_id=recipe.id))
         comments = Comment.query.filter_by(recipe_id=recipe.id).order_by(Comment.id.desc()).all()
         return render_template('recipe_detail.html', recipe=recipe, comments=comments)
+
+    @app.route('/favorite/<int:recipe_id>', methods=['POST'])
+    @login_required
+    def favorite_recipe(recipe_id):
+        recipe = Recipe.query.get_or_404(recipe_id)
+        if not Favorite.query.filter_by(user_id=current_user.id, recipe_id=recipe.id).first():
+            fav = Favorite(user_id=current_user.id, recipe_id=recipe.id)
+            db.session.add(fav)
+            db.session.commit()
+        return redirect(request.referrer or url_for('index'))
+
+    @app.route('/unfavorite/<int:recipe_id>', methods=['POST'])
+    @login_required
+    def unfavorite_recipe(recipe_id):
+        fav = Favorite.query.filter_by(user_id=current_user.id, recipe_id=recipe_id).first()
+        if fav:
+            db.session.delete(fav)
+            db.session.commit()
+        return redirect(request.referrer or url_for('index'))
 
     @app.route('/add', methods=['GET', 'POST'])
     @login_required
@@ -62,6 +98,7 @@ def create_app():
             description = request.form['description']
             ingredients = request.form['ingredients']
             instructions = request.form['instructions']
+            cooking_time = request.form.get('cooking_time', type=int)
             image = request.files.get('image')
             filename = None
             if image and image.filename:
@@ -69,7 +106,7 @@ def create_app():
                 image_path = os.path.join(app.static_folder, 'recipe_images')
                 os.makedirs(image_path, exist_ok=True)
                 image.save(os.path.join(image_path, filename))
-            new_recipe = Recipe(title=title, description=description, ingredients=ingredients, instructions=instructions, image=filename, user_id=current_user.id)
+            new_recipe = Recipe(title=title, description=description, ingredients=ingredients, instructions=instructions, image=filename, user_id=current_user.id, cooking_time=cooking_time)
             db.session.add(new_recipe)
             db.session.commit()
             flash('Рецептата е добавена!')
@@ -87,6 +124,7 @@ def create_app():
             recipe.description = request.form['description']
             recipe.ingredients = request.form['ingredients']
             recipe.instructions = request.form['instructions']
+            recipe.cooking_time = request.form.get('cooking_time', type=int)
             image = request.files.get('image')
             if image and image.filename:
                 filename = secure_filename(str(uuid.uuid4()) + '_' + image.filename)
@@ -168,7 +206,8 @@ def create_app():
     def profile(username):
         user = User.query.filter_by(username=username).first_or_404()
         recipes = user.recipes
-        return render_template('profile.html', user=user, recipes=recipes)
+        favorites = Recipe.query.join(Favorite).filter(Favorite.user_id == user.id).all()
+        return render_template('profile.html', user=user, recipes=recipes, favorites=favorites)
 
     @app.route('/edit_profile', methods=['GET', 'POST'])
     @login_required
@@ -197,6 +236,60 @@ def create_app():
             flash('Акаунтът е изтрит!')
             return redirect(url_for('signup'))
         return render_template('delete_account.html')
+
+    @app.route('/admin')
+    @login_required
+    def admin_panel():
+        if not current_user.is_admin:
+            abort(403)
+        users = User.query.all()
+        recipes = Recipe.query.all()
+        comments = Comment.query.all()
+        return render_template('admin.html', users=users, recipes=recipes, comments=comments)
+
+    @app.route('/admin/categories', methods=['GET', 'POST'])
+    @login_required
+    def admin_categories():
+        if not current_user.is_admin:
+            abort(403)
+        if request.method == 'POST':
+            name = request.form['name'].strip()
+            if name and not Category.query.filter_by(name=name).first():
+                db.session.add(Category(name=name))
+                db.session.commit()
+                flash('Категорията е добавена!')
+            return redirect(url_for('admin_categories'))
+        categories = Category.query.order_by(Category.name).all()
+        return render_template('admin_categories.html', categories=categories)
+
+    @app.route('/admin/categories/edit/<int:cat_id>', methods=['GET', 'POST'])
+    @login_required
+    def edit_category(cat_id):
+        if not current_user.is_admin:
+            abort(403)
+        category = Category.query.get_or_404(cat_id)
+        if request.method == 'POST':
+            name = request.form['name'].strip()
+            if name and not Category.query.filter(Category.id != cat_id, Category.name == name).first():
+                category.name = name
+                db.session.commit()
+                flash('Категорията е обновена!')
+                return redirect(url_for('admin_categories'))
+        return render_template('edit_category.html', category=category)
+
+    @app.route('/admin/categories/delete/<int:cat_id>', methods=['POST'])
+    @login_required
+    def delete_category(cat_id):
+        if not current_user.is_admin:
+            abort(403)
+        category = Category.query.get_or_404(cat_id)
+        if not category.recipes:
+            db.session.delete(category)
+            db.session.commit()
+            flash('Категорията е изтрита!')
+        else:
+            flash('Не може да изтриете категория с рецепти!')
+        return redirect(url_for('admin_categories'))
 
     return app
 

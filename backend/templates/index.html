@@ -11,7 +11,8 @@
     <a class="navbar-brand" href="{{ url_for('index') }}">RecipeApp</a>
     <form class="d-flex me-auto" method="get" action="{{ url_for('index') }}">
       <input class="form-control me-2" type="search" name="q" placeholder="Търси рецепти или автор..." value="{{ search_query or '' }}" aria-label="Search">
-      <button class="btn btn-outline-success" type="submit">Търси</button>
+      <button class="btn btn-outline-success me-2" type="submit">Търси</button>
+      <a href="{{ url_for('index', sort='rating') }}" class="btn btn-outline-primary {% if sort == 'rating' %}active{% endif %}">Сортирай по рейтинг</a>
     </form>
     <div class="d-flex">
       {% if current_user.is_authenticated %}
@@ -48,14 +49,31 @@
             <p class="card-text">{{ recipe.description }}</p>
             <p><em>Съставки:</em> {{ recipe.ingredients }}</p>
             <p><em>Инструкции:</em> {{ recipe.instructions }}</p>
+            <p><em>Среден рейтинг:</em> {{ recipe.average_rating if recipe.average_rating is not none else 'Няма' }}</p>
+            <p><em>Време за готвене:</em> {{ recipe.cooking_time }} минути</p>
           </div>
-          <div class="card-footer bg-white">
-            <small>Автор: <a href="{{ url_for('profile', username=recipe.author.username) }}">
-              {% if recipe.author.profile_picture %}
-                <img src="{{ url_for('static', filename='profile_pics/' ~ recipe.author.profile_picture) }}" alt="Profile" width="32" class="rounded-circle me-1">
-              {% endif %}
-              {{ recipe.author.username }}
-            </a></small>
+          <div class="card-footer bg-white d-flex align-items-center justify-content-between">
+            <div>
+              <small>Автор: <a href="{{ url_for('profile', username=recipe.author.username) }}">
+                {% if recipe.author.profile_picture %}
+                  <img src="{{ url_for('static', filename='profile_pics/' ~ recipe.author.profile_picture) }}" alt="Profile" width="32" class="rounded-circle me-1">
+                {% endif %}
+                {{ recipe.author.username }}
+              </a></small>
+            </div>
+            <div>
+              <form method="POST" action="{{ url_for('favorite_recipe', recipe_id=recipe.id) }}" style="display:inline;">
+                {% if current_user.is_authenticated and not recipe.favorites|selectattr('user_id', 'equalto', current_user.id)|list %}
+                  <button type="submit" class="btn btn-outline-danger btn-sm">&#10084; Харесай</button>
+                {% endif %}
+              </form>
+              <form method="POST" action="{{ url_for('unfavorite_recipe', recipe_id=recipe.id) }}" style="display:inline;">
+                {% if current_user.is_authenticated and recipe.favorites|selectattr('user_id', 'equalto', current_user.id)|list %}
+                  <button type="submit" class="btn btn-danger btn-sm">&#10084; Премахни</button>
+                {% endif %}
+              </form>
+              <span class="ms-2">{{ recipe.favorites|length }} &#10084;</span>
+            </div>
           </div>
         </div>
       </div>

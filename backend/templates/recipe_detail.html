@@ -21,7 +21,15 @@
   </div>
 </nav>
 <div class="container">
-    <div class="card mb-4">
+    <div class="card mb-4 position-relative">
+        {% if current_user.is_authenticated and recipe.author == current_user %}
+            <div class="position-absolute top-0 end-0 m-2">
+                <a href="{{ url_for('edit_recipe', recipe_id=recipe.id) }}" class="btn btn-outline-secondary btn-sm">Редактирай</a>
+                <form method="POST" style="display:inline;" onsubmit="return confirm('Сигурни ли сте, че искате да изтриете тази рецепта?')">
+                    <button type="submit" name="delete_recipe" class="btn btn-outline-danger btn-sm">Изтрий</button>
+                </form>
+            </div>
+        {% endif %}
         {% if recipe.image %}
             <img src="{{ url_for('static', filename='recipe_images/' ~ recipe.image) }}" class="card-img-top" alt="Recipe Image">
         {% endif %}
@@ -31,6 +39,21 @@
             <p><strong>Съставки:</strong> {{ recipe.ingredients }}</p>
             <p><strong>Инструкции:</strong> {{ recipe.instructions }}</p>
             <p><strong>Автор:</strong> <a href="{{ url_for('profile', username=recipe.author.username) }}">{{ recipe.author.username }}</a></p>
+            <p><strong>Среден рейтинг:</strong> {{ recipe.average_rating if recipe.average_rating is not none else 'Няма' }}</p>
+            <p><strong>Време за готвене:</strong> {{ recipe.cooking_time }} минути</p>
+            <div class="d-flex align-items-center mt-2">
+                <form method="POST" action="{{ url_for('favorite_recipe', recipe_id=recipe.id) }}" style="display:inline;">
+                  {% if current_user.is_authenticated and not recipe.favorites|selectattr('user_id', 'equalto', current_user.id)|list %}
+                    <button type="submit" class="btn btn-outline-danger btn-sm">&#10084; Харесай</button>
+                  {% endif %}
+                </form>
+                <form method="POST" action="{{ url_for('unfavorite_recipe', recipe_id=recipe.id) }}" style="display:inline;">
+                  {% if current_user.is_authenticated and recipe.favorites|selectattr('user_id', 'equalto', current_user.id)|list %}
+                    <button type="submit" class="btn btn-danger btn-sm">&#10084; Премахни</button>
+                  {% endif %}
+                </form>
+                <span class="ms-2">{{ recipe.favorites|length }} &#10084;</span>
+            </div>
         </div>
     </div>
     <h3>Коментари</h3>

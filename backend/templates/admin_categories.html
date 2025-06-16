@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <title>Категории</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm mb-4">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="{{ url_for('index') }}">RecipeApp</a>
+    <div class="d-flex">
+      <a class="nav-link" href="{{ url_for('admin_panel') }}">Админ панел</a>
+      <a class="nav-link" href="{{ url_for('logout') }}">Изход</a>
+    </div>
+  </div>
+</nav>
+<div class="container">
+    <h1 class="mb-4">Категории</h1>
+    <form method="POST" class="mb-4 d-flex align-items-end">
+        <div class="me-2">
+            <label class="form-label">Нова категория:</label>
+            <input type="text" name="name" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-success">Добави</button>
+    </form>
+    <table class="table table-bordered">
+        <thead><tr><th>ID</th><th>Име</th><th>Действия</th></tr></thead>
+        <tbody>
+        {% for cat in categories %}
+            <tr>
+                <td>{{ cat.id }}</td>
+                <td>{{ cat.name }}</td>
+                <td>
+                    <a href="{{ url_for('edit_category', cat_id=cat.id) }}" class="btn btn-outline-secondary btn-sm">Редактирай</a>
+                    <form method="POST" action="{{ url_for('delete_category', cat_id=cat.id) }}" style="display:inline;" onsubmit="return confirm('Сигурни ли сте, че искате да изтриете тази категория?')">
+                        <button type="submit" class="btn btn-outline-danger btn-sm">Изтрий</button>
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <a href="{{ url_for('admin_panel') }}" class="btn btn-secondary mt-3">Назад към админ панела</a>
+</div>
+</body>
+</html> 

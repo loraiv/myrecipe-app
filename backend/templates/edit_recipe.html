@@ -43,6 +43,10 @@
             <label class="form-label">Снимка:</label>
             <input type="file" name="image" accept="image/*" class="form-control">
         </div>
+        <div class="mb-3">
+            <label for="cooking_time" class="form-label">Време за готвене (минути):</label>
+            <input type="number" id="cooking_time" name="cooking_time" class="form-control" min="1" step="1" value="{{ recipe.cooking_time or '' }}" required>
+        </div>
         <button type="submit" class="btn btn-success">Запази</button>
         <a href="{{ url_for('index') }}" class="btn btn-secondary ms-2">Назад</a>
     </form>
