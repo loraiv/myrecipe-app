@@ -42,7 +42,7 @@ def create_app():
             db.session.commit()
             flash('Коментарът е добавен!')
             return redirect(url_for('recipe_detail', recipe_id=recipe.id))
-        comments = Comment.query.filter_by(recipe_id=recipe.id).order_by(Comment.created_at.desc()).all()
+        comments = Comment.query.filter_by(recipe_id=recipe.id).order_by(Comment.id.desc()).all()
         return render_template('recipe_detail.html', recipe=recipe, comments=comments)
 
     @app.route('/add', methods=['GET', 'POST'])
@@ -90,7 +90,7 @@ def create_app():
             return redirect(url_for('recipe_detail', recipe_id=recipe.id))
         return render_template('edit_recipe.html', recipe=recipe)
 
-    @app.route('/delete/<int:recipe_id>')
+    @app.route('/delete/<int:recipe_id>', methods=['POST'])
     @login_required
     def delete_recipe(recipe_id):
         recipe = Recipe.query.get_or_404(recipe_id)
@@ -99,7 +99,7 @@ def create_app():
         db.session.delete(recipe)
         db.session.commit()
         flash('Рецептата е изтрита!')
-        return redirect(url_for('index'))
+        return redirect(url_for('profile', username=current_user.username))
 
     @app.route('/signup', methods=['GET', 'POST'])
     def signup():
@@ -160,6 +160,34 @@ def create_app():
         user = User.query.filter_by(username=username).first_or_404()
         recipes = user.recipes
         return render_template('profile.html', user=user, recipes=recipes)
+
+    @app.route('/edit_profile', methods=['GET', 'POST'])
+    @login_required
+    def edit_profile():
+        if request.method == 'POST':
+            profile_picture = request.files.get('profile_picture')
+            if profile_picture and profile_picture.filename:
+                filename = secure_filename(str(uuid.uuid4()) + '_' + profile_picture.filename)
+                profile_pic_path = os.path.join(app.static_folder, 'profile_pics')
+                os.makedirs(profile_pic_path, exist_ok=True)
+                profile_picture.save(os.path.join(profile_pic_path, filename))
+                current_user.profile_picture = filename
+                db.session.commit()
+                flash('Профилната снимка е обновена!')
+                return redirect(url_for('profile', username=current_user.username))
+        return render_template('edit_profile.html', user=current_user)
+
+    @app.route('/delete_account', methods=['POST', 'GET'])
+    @login_required
+    def delete_account():
+        if request.method == 'POST':
+            user = User.query.get(current_user.id)
+            logout_user()
+            db.session.delete(user)
+            db.session.commit()
+            flash('Акаунтът е изтрит!')
+            return redirect(url_for('signup'))
+        return render_template('delete_account.html')
 
     return app
 
