@@ -88,8 +88,4 @@ Example POST body:
 - Swagger/OpenAPI documentation
 - Mobile app integration
 
-## Credits
-- Developed by [Your Name]
-- Inspired by the open-source community
 
----
