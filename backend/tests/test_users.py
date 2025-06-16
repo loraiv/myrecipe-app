@@ -2,7 +2,7 @@ import pytest
 from app import app, db, User
 from flask import json
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def client():
     app.config['TESTING'] = True
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
