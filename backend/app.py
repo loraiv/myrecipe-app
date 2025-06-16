@@ -26,10 +26,19 @@ def create_app():
     def load_user(user_id):
         return User.query.get(int(user_id))
 
-    @app.route('/')
+    @app.route('/', methods=['GET', 'POST'])
     def index():
-        recipes = Recipe.query.order_by(Recipe.id.desc()).all()
-        return render_template('index.html', recipes=recipes)
+        query = request.args.get('q', '').strip()
+        if query:
+            recipes = Recipe.query.join(User).filter(
+                (Recipe.title.ilike(f'%{query}%')) |
+                (Recipe.description.ilike(f'%{query}%')) |
+                (Recipe.ingredients.ilike(f'%{query}%')) |
+                (User.username.ilike(f'%{query}%'))
+            ).order_by(Recipe.id.desc()).all()
+        else:
+            recipes = Recipe.query.order_by(Recipe.id.desc()).all()
+        return render_template('index.html', recipes=recipes, search_query=query)
 
     @app.route('/recipe/<int:recipe_id>', methods=['GET', 'POST'])
     def recipe_detail(recipe_id):

@@ -10,8 +10,8 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(128))
     profile_picture = db.Column(db.String(255))
-    recipes = db.relationship('Recipe', backref='author', lazy=True)
-    comments = db.relationship('Comment', backref='author', lazy=True)
+    recipes = db.relationship('Recipe', backref='author', lazy=True, cascade='all, delete-orphan')
+    comments = db.relationship('Comment', backref='author', lazy=True, cascade='all, delete-orphan')
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
