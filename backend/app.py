@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, abort
+from flask import Flask, render_template, request, redirect, url_for, flash, abort, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_cors import CORS
@@ -327,6 +327,74 @@ def admin_panel():
     recipes = Recipe.query.all()
     comments = Comment.query.all()
     return render_template('admin.html', users=users, recipes=recipes, comments=comments)
+
+# --- REST API for Recipes ---
+@app.route('/api/recipes', methods=['GET'])
+def api_get_recipes():
+    recipes = Recipe.query.order_by(Recipe.id.desc()).all()
+    return jsonify([{
+        'id': r.id,
+        'title': r.title,
+        'description': r.description,
+        'ingredients': r.ingredients,
+        'instructions': r.instructions,
+        'image': r.image,
+        'cooking_time': r.cooking_time,
+        'created_at': r.created_at.isoformat() if r.created_at else None,
+        'author': r.author.username if r.author else None,
+        'average_rating': r.average_rating
+    } for r in recipes])
+
+@app.route('/api/recipes/<int:recipe_id>', methods=['GET'])
+def api_get_recipe(recipe_id):
+    recipe = Recipe.query.get_or_404(recipe_id)
+    return jsonify({
+        'id': recipe.id,
+        'title': recipe.title,
+        'description': recipe.description,
+        'ingredients': recipe.ingredients,
+        'instructions': recipe.instructions,
+        'image': recipe.image,
+        'cooking_time': recipe.cooking_time,
+        'created_at': recipe.created_at.isoformat() if recipe.created_at else None,
+        'author': recipe.author.username if recipe.author else None,
+        'average_rating': recipe.average_rating
+    })
+
+@app.route('/api/recipes', methods=['POST'])
+def api_create_recipe():
+    data = request.get_json()
+    if not data or not all(k in data for k in ('title', 'description', 'ingredients', 'instructions', 'cooking_time', 'user_id')):
+        return jsonify({'error': 'Missing required fields'}), 400
+    recipe = Recipe(
+        title=data['title'],
+        description=data['description'],
+        ingredients=data['ingredients'],
+        instructions=data['instructions'],
+        cooking_time=data['cooking_time'],
+        user_id=data['user_id'],
+        image=data.get('image')
+    )
+    db.session.add(recipe)
+    db.session.commit()
+    return jsonify({'message': 'Recipe created', 'id': recipe.id}), 201
+
+@app.route('/api/recipes/<int:recipe_id>', methods=['PUT'])
+def api_update_recipe(recipe_id):
+    recipe = Recipe.query.get_or_404(recipe_id)
+    data = request.get_json()
+    for field in ['title', 'description', 'ingredients', 'instructions', 'cooking_time', 'image']:
+        if field in data:
+            setattr(recipe, field, data[field])
+    db.session.commit()
+    return jsonify({'message': 'Recipe updated'})
+
+@app.route('/api/recipes/<int:recipe_id>', methods=['DELETE'])
+def api_delete_recipe(recipe_id):
+    recipe = Recipe.query.get_or_404(recipe_id)
+    db.session.delete(recipe)
+    db.session.commit()
+    return jsonify({'message': 'Recipe deleted'})
 
 if __name__ == '__main__':
     app.run(debug=True)
