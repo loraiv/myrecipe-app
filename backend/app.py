@@ -12,6 +12,12 @@ from werkzeug.security import generate_password_hash, check_password_hash
 app = Flask(__name__, template_folder='templates')
 CORS(app)
 
+@app.template_filter('nl2br')
+def nl2br(value):
+    if value is None:
+        return ''
+    return value.replace('\n', '<br>')
+
 # Configure app
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'recipes.db')
